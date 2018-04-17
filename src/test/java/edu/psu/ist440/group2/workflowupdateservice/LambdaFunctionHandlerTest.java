@@ -39,10 +39,15 @@ public class LambdaFunctionHandlerTest {
     private static final String EXPECTED_TRANSLATED_KEY = "transleted_key";
     private static final String EXPECTED_STATUS = "QUEUED";
     
+    LambdaFunctionHandler handler;
+    Context ctx;
     
     @Before
     public void setUp() throws Exception {
     	
+    	handler = new LambdaFunctionHandler();
+        ctx = createContext(); 
+        
     	UploadedImageInfo uii = new UploadedImageInfo();
     	uii.setBucket(EXPECTED_UPLOADED_INFO_BUCKET);
     	uii.setKey(EXPECTED_UPLOADED_INFO_KEY);
@@ -91,14 +96,25 @@ public class LambdaFunctionHandlerTest {
 
     @Test
     public void testLambdaFunctionHandler() {
-        LambdaFunctionHandler handler = new LambdaFunctionHandler();
-        Context ctx = createContext();
-
         JobItem result = handler.handleRequest(input, ctx);
         assertEquals(EXPECTED_USERID, result.getUserId());
         assertEquals(EXPECTED_JOBID, result.getJobId());
         assertEquals(EXPECTED_CREATED_DATE, result.getCreatedDate());
         assertEquals(EXPECTED_STATUS, result.getStatus());
 
+    }
+    
+    @Test(expected = RuntimeException.class)
+    public void testLamndaFunctionNullUser() {
+    	JobItem item = new JobItem();
+    	item.setJobId("missing userId");
+    	handler.handleRequest(item, ctx);	
+    }
+    
+    @Test(expected = RuntimeException.class)
+    public void testLamndaFunctionNullJob() {
+    	JobItem item = new JobItem();
+    	item.setUserId("missing userId");
+    	handler.handleRequest(item, ctx);	
     }
 }

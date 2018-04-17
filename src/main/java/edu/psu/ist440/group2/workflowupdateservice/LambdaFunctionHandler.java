@@ -32,18 +32,41 @@ public class LambdaFunctionHandler implements RequestHandler<JobItem, JobItem> {
 	 */
 	@Override
 	public JobItem handleRequest(JobItem input, Context context) {
+		
+		JobItem item = null;
 
-		AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
-		DynamoDBMapper mapper = new DynamoDBMapper(client);
-		String userId = input.getUserId();
-		String jobId = input.getJobId();
+		try {
+			// Create Dynamo client
+			AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
+			DynamoDBMapper mapper = new DynamoDBMapper(client);
+			
+			// Save data
+			if (input.getUserId() == null) {
+				throw new WorkflowUpdateException("Input data missing partition key (userId)");
+			}
+			if (input.getJobId() == null) {
+				throw new WorkflowUpdateException("Input data missing sort key (jobId)");
+			}
+			String userId = input.getUserId();
+			String jobId = input.getJobId();
 
-		mapper.save(input);
-		context.getLogger().log("Input: " + input);
+			mapper.save(input);
+			context.getLogger().log("Input: " + input);
 
-		JobItem item = mapper.load(JobItem.class, userId, jobId);
+			// Fetch the resulting object from Dynamo and return it
+			item = mapper.load(JobItem.class, userId, jobId);
 
+			if (item == null) {
+				throw new WorkflowUpdateException(
+						String.format("Item not found with partition key: %s sort key: %s", userId, jobId));
+			}
+		} catch (WorkflowUpdateException e) {
+			context.getLogger().log(e.getMessage());
+			throw new RuntimeException(e);
+		}
+		
 		return item;
+		
 	}
 
 }
