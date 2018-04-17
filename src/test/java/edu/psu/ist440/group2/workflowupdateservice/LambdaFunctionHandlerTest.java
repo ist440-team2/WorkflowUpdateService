@@ -12,10 +12,9 @@ import org.junit.Test;
 
 import com.amazonaws.services.lambda.runtime.Context;
 
-import edu.psu.ist440.group2.mappings.JobItem;
-import edu.psu.ist440.group2.mappings.JobItem.DecryptedInfo;
-import edu.psu.ist440.group2.mappings.JobItem.OCRInfo;
-import edu.psu.ist440.group2.mappings.JobItem.UploadedImageInfo;
+import edu.psu.ist440.group2.workflowupdateservice.JobItem.DecryptedInfo;
+import edu.psu.ist440.group2.workflowupdateservice.JobItem.OCRInfo;
+import edu.psu.ist440.group2.workflowupdateservice.JobItem.UploadedImageInfo;
 
 /**
  * A simple test harness for locally invoking your Lambda function handler.
