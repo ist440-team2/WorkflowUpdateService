@@ -1,6 +1,7 @@
 package edu.psu.ist440.group2.workflowupdateservice;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
@@ -23,6 +24,7 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 @DynamoDBTable(tableName = "Jobs")
 public class JobItem {
 	
+	/** set by the previous task during exception handling */
 	private boolean failed;
 
 	/** ID of the user who uploaded the photo */
@@ -59,7 +61,15 @@ public class JobItem {
 	
 	@DynamoDBIgnore
 	public boolean isFailed() {
-		return failed;
+		boolean decryptionFailure = false;
+		for (DecryptedInfo di : decryptedInfo) {
+			if (di.failed) {
+				decryptionFailure = true;
+				break;
+			}
+		}
+		
+		return (this.failed || ocrInfo.failed || decryptionFailure);
 	}
 
 	public void setFailed(boolean failed) {
@@ -132,6 +142,7 @@ public class JobItem {
 
 	@DynamoDBDocument
 	public static class UploadedImageInfo {
+		
 		/** S3 bucket where the file is stored */
 		private String bucket = "";
 
@@ -160,6 +171,10 @@ public class JobItem {
 
 	@DynamoDBDocument
 	public static class OCRInfo {
+		
+		/** set by the OCR task during exception handling */
+		private boolean failed;
+		
 		/** S3 bucket where the file is stored */
 		private String bucket;
 		
@@ -184,10 +199,24 @@ public class JobItem {
 			this.key = imageKey;
 		}
 
+		@DynamoDBIgnore
+		public boolean isFailed() {
+			return failed;
+		}
+
+		public void setFailed(boolean failed) {
+			this.failed = failed;
+		}
+		
+		
+
 	}
 
 	@DynamoDBDocument
 	public static class DecryptedInfo {
+		/** set by the decryption task during exception handling */
+		private boolean failed;
+		
 		/** Name of the method used to decrypt the file (eg Caesar) */
 		private String method;
 		
@@ -208,6 +237,15 @@ public class JobItem {
 		
 		/** S3 key (file name) for the output of the translation module */
 		private String translatedKey;
+		
+		@DynamoDBIgnore
+		public boolean isFailed() {
+			return failed;
+		}
+
+		public void setFailed(boolean failed) {
+			this.failed = failed;
+		}
 
 		@DynamoDBAttribute(attributeName = "method")
 		public String getMethod() {
