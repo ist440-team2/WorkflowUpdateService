@@ -32,13 +32,13 @@ public class LambdaFunctionHandler implements RequestHandler<JobItem, JobItem> {
 	 */
 	@Override
 	public JobItem handleRequest(JobItem input, Context context) {
-		
+
 		JobItem item = null;
-		
+
 		// if the input has the failed flag set then set the status to failed
-		// the item should be updated in the database then an exception thrown 
+		// the item should be updated in the database then an exception thrown
 		// later to stop the workflow
-		if(input.isFailed()) {
+		if (input.isFailed()) {
 			input.setStatus("FAILED");
 		}
 
@@ -46,7 +46,7 @@ public class LambdaFunctionHandler implements RequestHandler<JobItem, JobItem> {
 			// Create Dynamo client
 			AmazonDynamoDB client = AmazonDynamoDBClientBuilder.standard().build();
 			DynamoDBMapper mapper = new DynamoDBMapper(client);
-			
+
 			// Save data
 			if (input.getUserId() == null) {
 				throw new WorkflowUpdateException("Input data missing partition key (userId)");
@@ -63,21 +63,36 @@ public class LambdaFunctionHandler implements RequestHandler<JobItem, JobItem> {
 			// Fetch the resulting object from Dynamo and return it
 			item = mapper.load(JobItem.class, userId, jobId);
 
-			if (item == null) {
-				throw new WorkflowUpdateException(
-						String.format("Item not found with partition key: %s sort key: %s", userId, jobId));
-			}
-			
-			if (input.isFailed()) {
+			if (item == null || input.isFailed()) {
 				throw new WorkflowUpdateException(String.format("%s;%s", input.getUserId(), input.getJobId()));
 			}
+
 		} catch (WorkflowUpdateException e) {
 			context.getLogger().log(e.getMessage());
 			throw new RuntimeException(e.getMessage(), e);
 		}
-		
+
 		return item;
-		
+
+	}
+
+	/**
+	 * Custom exception class for workflow update errors
+	 * 
+	 * @author j6r
+	 *
+	 */
+	public class WorkflowUpdateException extends Exception {
+
+		public WorkflowUpdateException(String message, Throwable cause) {
+			super(message, cause);
+
+		}
+
+		public WorkflowUpdateException(String message) {
+			super(message);
+		}
+
 	}
 
 }
