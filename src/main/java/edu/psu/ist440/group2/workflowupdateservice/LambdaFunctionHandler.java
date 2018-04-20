@@ -34,6 +34,13 @@ public class LambdaFunctionHandler implements RequestHandler<JobItem, JobItem> {
 	public JobItem handleRequest(JobItem input, Context context) {
 		
 		JobItem item = null;
+		
+		// if the input has the failed flag set then set the status to failed
+		// the item should be updated in the database then an exception thrown 
+		// later to stop the workflow
+		if(input.isFailed()) {
+			input.setStatus("FAILED");
+		}
 
 		try {
 			// Create Dynamo client
@@ -60,9 +67,13 @@ public class LambdaFunctionHandler implements RequestHandler<JobItem, JobItem> {
 				throw new WorkflowUpdateException(
 						String.format("Item not found with partition key: %s sort key: %s", userId, jobId));
 			}
+			
+			if (input.isFailed()) {
+				throw new WorkflowUpdateException(String.format("%s;%s", input.getUserId(), input.getJobId()));
+			}
 		} catch (WorkflowUpdateException e) {
 			context.getLogger().log(e.getMessage());
-			throw new RuntimeException(e);
+			throw new RuntimeException(e.getMessage(), e);
 		}
 		
 		return item;

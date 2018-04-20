@@ -104,8 +104,19 @@ public class LambdaFunctionHandlerTest {
 
     }
     
+    @Test
+    public void testFailFlag() {
+    	try {
+    		input.setFailed(true);
+        	JobItem result = handler.handleRequest(input, ctx);
+    	} catch (RuntimeException e) {
+    		assertEquals(String.format("%s;%s", EXPECTED_USERID, EXPECTED_JOBID), e.getMessage());
+    	}
+    	 
+    }
+    
     @Test(expected = RuntimeException.class)
-    public void testLamndaFunctionNullUser() {
+    public void testLamdaFunctionNullUser() {
     	JobItem item = new JobItem();
     	item.setJobId("missing userId");
     	handler.handleRequest(item, ctx);	
@@ -117,4 +128,5 @@ public class LambdaFunctionHandlerTest {
     	item.setUserId("missing userId");
     	handler.handleRequest(item, ctx);	
     }
+    
 }
